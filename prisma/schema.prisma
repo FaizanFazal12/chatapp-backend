@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  messages_sent     Message[]      @relation("messages_sent")
+  messages_received Message[]      @relation("messages_received")
+  chats             Chat[]         @relation("chat_users")
+  groups            Group[]        @relation("group_users")
+  group_messages    GroupMessage[] @relation("group_messages")
+  group_users       GroupUser[]    @relation("group_users")
+  group_admin       Group[]        @relation("group_admin")
+}
+
+model Chat {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  messages Message[]
+  users    User[]    @relation("chat_users")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String
+  type       String   @default("text")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  chat_id     String
+  sender_id   String
+  receiver_id String
+
+  chat     Chat @relation(fields: [chat_id], references: [id])
+  sender   User @relation("messages_sent", fields: [sender_id], references: [id])
+  receiver User @relation("messages_received", fields: [receiver_id], references: [id])
+}
+
+model Group {
+  id          String         @id @default(uuid())
+  name        String
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
+  admin_id    String
+  admin       User           @relation("group_admin", fields: [admin_id], references: [id])
+  users       User[]         @relation("group_users")
+  messages    GroupMessage[]
+  group_users GroupUser[]
+}
+
+model GroupMessage {
+  id         String   @id @default(uuid())
+  content    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  group      Group    @relation(fields: [group_id], references: [id])
+  group_id   String
+  user       User     @relation("group_messages", fields: [user_id], references: [id])
+  user_id    String
+}
+
+model GroupUser {
+  id       String @id @default(uuid())
+  group_id String
+  user_id  String
+  group    Group  @relation(fields: [group_id], references: [id])
+  user     User   @relation("group_users", fields: [user_id], references: [id])
+}
