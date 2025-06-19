@@ -93,12 +93,12 @@ function setupSocket(io) {
 
     socket.on('remove_user_from_group', async (data) => {
       const { group_id, user_id, admin_id } = data;
-      
+
       // Validate required fields
       if (!group_id || !user_id) {
         socket.emit('error', { message: 'Missing required fields: group_id and user_id are required' });
         return;
-      }   
+      }
 
       try {
         // First check if the user is actually in the group
@@ -164,7 +164,7 @@ function setupSocket(io) {
 
         // Notify all users in the group
         io.to(group_id).emit('receive_group_message', message);
-        
+
         // Notify the removed user specifically
         io.to(user_id).emit('removed_from_group', {
           group_id: group_id,
@@ -179,13 +179,13 @@ function setupSocket(io) {
 
     socket.on('send_voice_note', async (data) => {
       const { sender_id, receiver_id, audio, chat_id } = data;
-      
+
       try {
         const filename = `voice-note-${Date.now()}.webm`;
         const filepath = path.join(uploadsDir, filename);
-        
+
         fs.writeFileSync(filepath, audio);
-        
+
         const message = await prisma.message.create({
           data: {
             content: `/uploads/${filename}`,
@@ -210,20 +210,42 @@ function setupSocket(io) {
           }
         });
 
-        console.log('Voice note saved:', {
-          filename,
-          filepath,
-          messagePath: message.content,
-          sender: message.sender,
-          receiver: message.receiver
-        });
-
         io.to(chat_id).emit('receive_message', message);
       } catch (error) {
         console.error('Error handling voice note:', error);
         socket.emit('error', { message: 'Failed to send voice note' });
       }
     });
+
+    socket.on('send_group_voice_note', async (data) => {
+      const { sender_id, group_id, audio } = data;
+
+      try {
+        const filename = `voice-note-${Date.now()}.webm`;
+        const filepath = path.join(uploadsDir, filename);
+
+        fs.writeFileSync(filepath, audio);
+
+        const message = await prisma.groupMessage.create({
+          data: {
+            group_id, user_id: sender_id, type: 'voice', content: `/uploads/${filename}`
+          },
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  id: true
+                }
+              }
+            }
+        })
+
+        io.to(group_id).emit('receive_group_message', message);
+      } catch (error) {
+        console.error('Error handling group voice note:', error);
+        socket.emit('error', { message: 'Failed to send group voice note' });
+      }
+    })
 
     socket.on('disconnect', () => {
       console.log(`❌ User disconnected: ${socket.id}`);

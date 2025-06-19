@@ -70,6 +70,7 @@ model Group {
 model GroupMessage {
   id         String   @id @default(uuid())
   content    String
+  type       String   @default("text")
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   group      Group    @relation(fields: [group_id], references: [id])
