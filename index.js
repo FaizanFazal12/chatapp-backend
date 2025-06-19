@@ -42,20 +42,20 @@ app.use(cors({
   credentials: true,
 }));
 
-// Log cookies for debugging (optional)
 app.use((req, res, next) => {
-  console.log('🍪 Cookies:', req.cookies);
+  req.io = io;
   next();
-});
+})
 
+// === Socket.IO Setup ===
+setupSocket(io);
 // === Routes ===
 app.use('/api', require('./routes'));
 
 // === Error Handler ===
 app.use(errorHandler);
 
-// === Socket.IO Setup ===
-setupSocket(io);
+
 
 // === Start Server ===
 const PORT = process.env.PORT || 8000;

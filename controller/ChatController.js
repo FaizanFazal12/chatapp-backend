@@ -14,7 +14,7 @@ const ChatController = {
                         { users: { some: { id: receiver_id } } }
                     ]
                 },
-                
+
                 include: {
                     messages: {
                         orderBy: {
@@ -205,17 +205,14 @@ const ChatController = {
         try {
             const groups = await prisma.group.findMany({
                 where: {
-                    users: {
+                    group_users: {
                         some: {
-                            id: req.user.id
+                            user_id: req.user.id
                         }
-                    },
-
-                },
-                orderBy: {
-                    created_at: 'desc'
+                    }
                 }
             });
+            console.log(groups);
             return res.status(200).json({
                 message: 'Groups found',
                 groups: groups
@@ -251,14 +248,22 @@ const ChatController = {
             });
 
             // Create a system message about user removal
-            await prisma.groupMessage.create({
+            const message = await prisma.groupMessage.create({
                 data: {
                     group_id: group_id,
                     user_id: req.user.id,
                     content: `User has been removed from the group by admin`
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            id: true
+                        }
+                    }
                 }
             });
-
+            req.io.to(group_id).emit('receive_group_message', message);
             return res.status(200).json({
                 message: 'User removed from group successfully'
             });
@@ -295,13 +300,23 @@ const ChatController = {
             });
 
             // Create a system message about user addition
-            await prisma.groupMessage.create({
+            const message = await prisma.groupMessage.create({
                 data: {
                     group_id: group_id,
                     user_id: req.user.id,
                     content: `New members have been added to the group by admin`
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            id: true
+                        }
+                    }
                 }
             });
+            req.io.to(group_id).emit('receive_group_message'
+                , message);
 
             return res.status(200).json({
                 message: 'Users added to group successfully',
