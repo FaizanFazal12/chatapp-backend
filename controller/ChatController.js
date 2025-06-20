@@ -6,7 +6,6 @@ const ChatController = {
             const { sender_id, receiver_id } = req.params;
 
 
-
             let findChat = await prisma.chat.findFirst({
                 where: {
                     AND: [
@@ -38,7 +37,6 @@ const ChatController = {
                 }
             });
 
-            // If no chat exists, create a new one
             if (!findChat) {
                 findChat = await prisma.chat.create({
                     data: {
@@ -212,7 +210,6 @@ const ChatController = {
                     }
                 }
             });
-            console.log(groups);
             return res.status(200).json({
                 message: 'Groups found',
                 groups: groups
@@ -327,6 +324,73 @@ const ChatController = {
         }
     },
 
+
+    sendMessageWithAttachment: async (req, res, next) => {
+        try {
+            const { chat_id, receiver_id, content } = req.body;
+            const sender_id = req.user.id;
+            let attachmentData = {};
+            if (req.file) {
+                attachmentData = {
+                    attachmentUrl: `/uploads/${req.file.filename}`,
+                    attachmentName: req.file.originalname,
+                    attachmentType: req.file.mimetype,
+                    attachmentSize: req.file.size
+                };
+            }
+            const message = await prisma.message.create({
+                data: {
+                    chat_id,
+                    sender_id,
+                    receiver_id,
+                    content: content || '',
+                    type: req.file ? 'attachment' : 'text',
+                    ...attachmentData
+                },
+                include: {
+                    sender: { select: { name: true, id: true } },
+                    receiver: { select: { name: true, id: true } }
+                }
+            });
+
+            req.io.to(chat_id).emit('receive_message', message);
+            res.status(201).json({ message: 'Message sent', data: message });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    sendGroupMessageWithAttachment: async (req, res, next) => {
+        try {
+            const { group_id, content } = req.body;
+            const user_id = req.user.id;
+            let attachmentData = {};
+            if (req.file) {
+                attachmentData = {
+                    attachmentUrl: `/uploads/${req.file.filename}`,
+                    attachmentName: req.file.originalname,
+                    attachmentType: req.file.mimetype,
+                    attachmentSize: req.file.size
+                };
+            }
+            const message = await prisma.groupMessage.create({
+                data: {
+                    group_id,
+                    user_id,
+                    content: content || '',
+                    type: req.file ? 'attachment' : 'text',
+                    ...attachmentData
+                },
+                include: {
+                    user: { select: { name: true, id: true } }
+                }
+            });
+            req.io.to(group_id).emit('receive_group_message', message);
+            res.status(201).json({ message: 'Group message sent', data: message });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = ChatController;

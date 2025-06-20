@@ -9,9 +9,9 @@ const UserController = {
 
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
-        let error={
-          status:401,
-          message:'User already exists'
+        let error = {
+          status: 401,
+          message: 'User already exists'
         }
         return next(error);
       }
@@ -56,7 +56,6 @@ const UserController = {
         { expiresIn: process.env.JWT_EXPIRES_IN }
       );
 
-      console.log(token);
 
       res.cookie('token', token, {
         httpOnly: true,
@@ -70,7 +69,10 @@ const UserController = {
     }
   },
   getMe: async (req, res) => {
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const user = await prisma.user.findUnique({ where: { id: req?.user?.id } });
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
     return res.json({ user: user });
   },
   getUsers: async (req, res) => {
@@ -105,6 +107,11 @@ const UserController = {
     const { id } = req.params;
     const user = await prisma.user.delete({ where: { id } });
     return res.json(user);
+  },
+
+  logoutUser: async (req, res) => {
+    res.clearCookie("token");
+    return res.json({ message: 'Logged out successfully' });
   }
 };
 

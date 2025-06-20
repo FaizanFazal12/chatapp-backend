@@ -53,6 +53,11 @@ model Message {
   chat     Chat @relation(fields: [chat_id], references: [id])
   sender   User @relation("messages_sent", fields: [sender_id], references: [id])
   receiver User @relation("messages_received", fields: [receiver_id], references: [id])
+
+  attachmentUrl  String? // Path or URL to the file
+  attachmentName String? // Original file name
+  attachmentType String? // MIME type
+  attachmentSize Int?    // File size in bytes
 }
 
 model Group {
@@ -77,6 +82,11 @@ model GroupMessage {
   group_id   String
   user       User     @relation("group_messages", fields: [user_id], references: [id])
   user_id    String
+
+  attachmentUrl  String? // Path or URL to the file
+  attachmentName String? // Original file name
+  attachmentType String? // MIME type
+  attachmentSize Int?    // File size in bytes
 }
 
 model GroupUser {
