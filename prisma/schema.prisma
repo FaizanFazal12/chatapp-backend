@@ -21,13 +21,55 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  messages_sent     Message[]      @relation("messages_sent")
-  messages_received Message[]      @relation("messages_received")
-  chats             Chat[]         @relation("chat_users")
-  groups            Group[]        @relation("group_users")
-  group_messages    GroupMessage[] @relation("group_messages")
-  group_users       GroupUser[]    @relation("group_users")
-  group_admin       Group[]        @relation("group_admin")
+  messages_sent          Message[]      @relation("messages_sent")
+  messages_received      Message[]      @relation("messages_received")
+  chats                  Chat[]         @relation("chat_users")
+  groups                 Group[]        @relation("group_users")
+  group_messages         GroupMessage[] @relation("group_messages")
+  group_users            GroupUser[]    @relation("group_users")
+  group_admin            Group[]        @relation("group_admin")
+  notifications_sent     Notification[] @relation("notifications_sender")
+  notifications_received Notification[] @relation("notifications_receiver")
+  friends_requested      UserFriend[]   @relation("friend_requester")
+  friends_received       UserFriend[]   @relation("friend_addressee")
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  sender_id   String
+  receiver_id String
+  content     String
+  is_read     Boolean @default(false)
+  chat_id     String?
+  friend_id   String? // 🔗 Add this line
+
+  sender   User        @relation("notifications_sender", fields: [sender_id], references: [id])
+  receiver User        @relation("notifications_receiver", fields: [receiver_id], references: [id])
+  friend   UserFriend? @relation(fields: [friend_id], references: [id])
+}
+
+model UserFriend {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  requester_id String
+  addressee_id String
+  status       FriendStatus @default(PENDING)
+
+  requester    User           @relation("friend_requester", fields: [requester_id], references: [id])
+  addressee    User           @relation("friend_addressee", fields: [addressee_id], references: [id])
+  Notification Notification[]
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
 }
 
 model Chat {
@@ -57,7 +99,7 @@ model Message {
   attachmentUrl  String? // Path or URL to the file
   attachmentName String? // Original file name
   attachmentType String? // MIME type
-  attachmentSize Int?    // File size in bytes
+  attachmentSize Int? // File size in bytes
 }
 
 model Group {
@@ -86,7 +128,7 @@ model GroupMessage {
   attachmentUrl  String? // Path or URL to the file
   attachmentName String? // Original file name
   attachmentType String? // MIME type
-  attachmentSize Int?    // File size in bytes
+  attachmentSize Int? // File size in bytes
 }
 
 model GroupUser {

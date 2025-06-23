@@ -28,8 +28,15 @@ function setupSocket(io) {
   //   }
   // });
 
+  const onlineUsers = new Map(); // socketId -> userId
+
   io.on('connection', (socket) => {
-    console.log(`🔌 Socket connected: ${socket.id}`);
+    socket.on('user_connected', (userId) => {
+      console.log(`User connected: ${userId}`);
+      console.log(onlineUsers);
+      onlineUsers.set(socket.id, userId);
+      io.emit('update_users', Array.from(onlineUsers.values()));
+    });
 
     socket.on('join', (chatId) => {
       socket.join(chatId);
@@ -91,9 +98,6 @@ function setupSocket(io) {
       io.to(group_id).emit('receive_group_message', message);
     });
 
-   
-   
-
     socket.on('send_voice_note', async (data) => {
       const { sender_id, receiver_id, audio, chat_id } = data;
 
@@ -147,14 +151,14 @@ function setupSocket(io) {
           data: {
             group_id, user_id: sender_id, type: 'voice', content: `/uploads/${filename}`
           },
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  id: true
-                }
+          include: {
+            user: {
+              select: {
+                name: true,
+                id: true
               }
             }
+          }
         })
 
         io.to(group_id).emit('receive_group_message', message);
@@ -165,7 +169,8 @@ function setupSocket(io) {
     })
 
     socket.on('disconnect', () => {
-      console.log(`❌ User disconnected: ${socket.id}`);
+      onlineUsers.delete(socket.id);
+      io.emit('update_users', Array.from(onlineUsers.values()));
     });
   });
 }
