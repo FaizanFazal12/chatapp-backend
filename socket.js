@@ -28,23 +28,52 @@ function setupSocket(io) {
   //   }
   // });
 
-  const onlineUsers = new Map(); // socketId -> userId
+  const onlineUsers = new Map();
 
   io.on('connection', (socket) => {
     socket.on('user_connected', (userId) => {
-      console.log(`User connected: ${userId}`);
-      console.log(onlineUsers);
       onlineUsers.set(socket.id, userId);
       io.emit('update_users', Array.from(onlineUsers.values()));
+
+      socket.join(`user:${userId}`)
+
     });
 
     socket.on('join', (chatId) => {
       socket.join(chatId);
-      console.log(`User joined chat: ${chatId}`);
     });
+
+    socket.on('call:request', ({ from, to, offer }) => {
+
+      io.to(`user:${to}`).emit('receive:call:request', {
+        sender: from,
+        offer
+      })
+
+
+    })
+
+    socket.on('call:accepted', ({ from, to, ans }) => {
+      io.to(`user:${to}`).emit('call:accepted', {
+        from,
+        ans
+      })
+
+    })
+
+    socket.on('nego:offer', ({ from, to, offer }) => {
+      io.to(`user:${to}`).emit('nego:offer', {
+        from, to, offer
+      })
+    })
+    socket.on('nego:accepted', ({ to, ans }) => {
+      io.to(`user:${to}`).emit('nego:accepted', {
+        to, ans
+      })
+    })
+
     socket.on('leave', (chatId) => {
       socket.leave(chatId);
-      console.log(`User left chat: ${chatId}`);
     });
     socket.on('send_message', async (data) => {
       const { sender_id, receiver_id, content, chat_id } = data;
@@ -75,11 +104,9 @@ function setupSocket(io) {
 
     socket.on('join_group', (groupId) => {
       socket.join(groupId);
-      console.log(`User joined group: ${groupId}`);
     });
     socket.on('leave_group', (groupId) => {
       socket.leave(groupId);
-      console.log(`User left group: ${groupId}`);
     });
     socket.on('send_group_message', async (data) => {
       const { group_id, content, user_id } = data;
