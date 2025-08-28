@@ -52,7 +52,9 @@ function setupSocket(io) {
 
 
     })
-
+    socket.on('call:end', ({ from, to }) => {
+      io.to(`user:${to}`).emit('call:end', { from })
+    })
     socket.on('call:accepted', ({ from, to, ans }) => {
       io.to(`user:${to}`).emit('call:accepted', {
         from,
