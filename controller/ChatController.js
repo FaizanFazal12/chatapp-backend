@@ -217,7 +217,39 @@ const ChatController = {
             next(error);
         }
     },
-    getGroups: async (req, res, next) => { try { const groups = await prisma.group.findMany({ where: { group_users: { some: { user_id: req.user.id } } } }); return res.status(200).json({ message: 'Groups found', groups: groups }); } catch (error) { next(error); } },
+    getGroups: async (req, res, next) => {
+        try {
+
+            const groups = await prisma.group.findMany({
+                where: {
+                    group_users: { some: { user_id: req.user.id } }
+                }
+            });
+
+
+
+
+            return res.status(200).json({ message: 'Groups found', groups: groups });
+
+
+
+
+        }
+
+
+
+
+        catch (error) {
+
+
+            return next(error)
+
+
+        }
+
+
+
+    },
     sendGroupMessageWithAttachment: async (req, res, next) => {
         try {
             const { group_id, content } = req.body;
