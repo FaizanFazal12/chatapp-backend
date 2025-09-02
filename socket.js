@@ -77,6 +77,13 @@ function setupSocket(io) {
     socket.on('leave', (chatId) => {
       socket.leave(chatId);
     });
+
+    socket.on('typing', ({ chat_id, sender_id, receiver_id }) => {
+      io.to(chat_id).emit('typing', { chat_id, sender_id, receiver_id })
+    })
+    socket.on('stop_typing', ({ chat_id, sender_id, receiver_id }) => {
+      io.to(chat_id).emit('stop_typing', { chat_id, sender_id, receiver_id })
+    })
     socket.on('send_message', async (data) => {
       const { sender_id, receiver_id, content, chat_id } = data;
       const message = await prisma.message.create({
