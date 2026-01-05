@@ -28,6 +28,8 @@ const UserController = {
 
       res.cookie('token', token, {
         httpOnly: true,
+        secure: true,          // REQUIRED on Render (HTTPS)
+        sameSite: 'none',      // REQUIRED for cross-origin
         maxAge: 24 * 60 * 60 * 1000
       });
       return res.status(201).json({ message: 'User created successfully', user });
@@ -59,7 +61,8 @@ const UserController = {
 
       res.cookie('token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,          // REQUIRED on Render (HTTPS)
+        sameSite: 'none',      // REQUIRED for cross-origin
         maxAge: 24 * 60 * 60 * 1000 // 1 day
       });
 
