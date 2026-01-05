@@ -1,5 +1,5 @@
 const prisma = require('../db/db.config');
-const redis = require("../redisClient");
+// const redis = require("../redisClient");
 
 // Helper: always generate consistent keys
 function generateChatKey(sender_id, receiver_id) {
@@ -12,14 +12,14 @@ const ChatController = {
         try {
             const { sender_id, receiver_id } = req.params;
             const cacheKey = generateChatKey(sender_id, receiver_id);
-            const cachedChat = await redis.get(cacheKey);
+            // const cachedChat = await redis.get(cacheKey);
 
-            if (cachedChat) {
-                return res.status(200).json({
-                    message: 'Chat found (from cache)',
-                    chat: JSON.parse(cachedChat),
-                });
-            }
+            // if (cachedChat) {
+            //     return res.status(200).json({
+            //         message: 'Chat found (from cache)',
+            //         chat: JSON.parse(cachedChat),
+            //     });
+            // }
 
             // 2. Query DB
             let findChat = await prisma.chat.findFirst({
@@ -58,7 +58,7 @@ const ChatController = {
             }
 
             // 3. Cache result
-            await redis.set(cacheKey, JSON.stringify(findChat));
+            // await redis.set(cacheKey, JSON.stringify(findChat));
 
             return res.status(200).json({
                 message: 'Chat found (from DB)',
@@ -75,13 +75,13 @@ const ChatController = {
             const cacheKey = `chat:messages:${chat_id}`;
 
             // Try Redis
-            const cached = await redis.get(cacheKey);
-            if (cached) {
-                return res.status(200).json({
-                    message: 'Messages found (from cache)',
-                    messages: JSON.parse(cached),
-                });
-            }
+            // const cached = await redis.get(cacheKey);
+            // if (cached) {
+            //     return res.status(200).json({
+            //         message: 'Messages found (from cache)',
+            //         messages: JSON.parse(cached),
+            //     });
+            // }
 
             // DB
             const messages = await prisma.message.findMany({
@@ -90,7 +90,7 @@ const ChatController = {
             });
 
             // Cache
-            await redis.set(cacheKey, JSON.stringify(messages), "EX", 60);
+            // await redis.set(cacheKey, JSON.stringify(messages), "EX", 60);
 
             return res.status(200).json({
                 message: 'Messages found (from DB)',
@@ -106,13 +106,13 @@ const ChatController = {
             const { user_id } = req.params;
             const cacheKey = `user:chats:${user_id}`;
 
-            const cached = await redis.get(cacheKey);
-            if (cached) {
-                return res.status(200).json({
-                    message: 'Chats found (from cache)',
-                    chats: JSON.parse(cached)
-                });
-            }
+            // const cached = await redis.get(cacheKey);
+            // if (cached) {
+            //     return res.status(200).json({
+            //         message: 'Chats found (from cache)',
+            //         chats: JSON.parse(cached)
+            //     });
+            // }
 
             const chats = await prisma.chat.findMany({
                 where: { users: { some: { id: user_id } } },
@@ -125,7 +125,7 @@ const ChatController = {
                 }
             });
 
-            await redis.set(cacheKey, JSON.stringify(chats), "EX", 60);
+            // await redis.set(cacheKey, JSON.stringify(chats), "EX", 60);
 
             return res.status(200).json({
                 message: 'Chats found (from DB)',
