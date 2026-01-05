@@ -14,7 +14,7 @@ const app = express();
 const server = http.createServer(app);
 
 // === CORS Config ===
-const allowedOrigin = 'http://localhost:3000';
+const allowedOrigin = process.env.FRONTEND_URL ?? 'http://localhost:3000';
 
 const io = new Server(server, {
   cors: {
